@@ -74,8 +74,19 @@ class GlitchShader {
                 
                 // カラーブロック化
                 if (stripe > 0.5) {
-                    int colorIndex = int(mod(floor(uv.y * stripeFreq), 8.0));
-                    return colorShift(color, u_dominantColors[colorIndex], u_colorWeight / 100.0);
+                    float colorIndex = mod(floor(uv.y * stripeFreq), 8.0);
+                    vec3 selectedColor = u_dominantColors[0]; // デフォルト
+                    
+                    if (colorIndex < 1.0) selectedColor = u_dominantColors[0];
+                    else if (colorIndex < 2.0) selectedColor = u_dominantColors[1];
+                    else if (colorIndex < 3.0) selectedColor = u_dominantColors[2];
+                    else if (colorIndex < 4.0) selectedColor = u_dominantColors[3];
+                    else if (colorIndex < 5.0) selectedColor = u_dominantColors[4];
+                    else if (colorIndex < 6.0) selectedColor = u_dominantColors[5];
+                    else if (colorIndex < 7.0) selectedColor = u_dominantColors[6];
+                    else selectedColor = u_dominantColors[7];
+                    
+                    return colorShift(color, selectedColor, u_colorWeight / 100.0);
                 }
                 
                 return color;
@@ -87,9 +98,20 @@ class GlitchShader {
                 vec2 blockUV = floor(uv / blockSize) * blockSize;
                 
                 float blockNoise = noise(blockUV * 10.0 + u_time);
-                int colorIndex = int(mod(blockNoise * 8.0, 8.0));
+                float colorIndex = mod(blockNoise * 8.0, 8.0);
                 
-                return mix(color, u_dominantColors[colorIndex], u_colorWeight / 200.0);
+                vec3 selectedColor = u_dominantColors[0]; // デフォルト
+                
+                if (colorIndex < 1.0) selectedColor = u_dominantColors[0];
+                else if (colorIndex < 2.0) selectedColor = u_dominantColors[1];
+                else if (colorIndex < 3.0) selectedColor = u_dominantColors[2];
+                else if (colorIndex < 4.0) selectedColor = u_dominantColors[3];
+                else if (colorIndex < 5.0) selectedColor = u_dominantColors[4];
+                else if (colorIndex < 6.0) selectedColor = u_dominantColors[5];
+                else if (colorIndex < 7.0) selectedColor = u_dominantColors[6];
+                else selectedColor = u_dominantColors[7];
+                
+                return mix(color, selectedColor, u_colorWeight / 200.0);
             }
             
             // ノイズエフェクト

@@ -169,29 +169,52 @@ class ImageToGlitchApp {
     }
 
     analyzeImage(image) {
+        console.log('画像解析開始:', image.width, 'x', image.height);
+        
         // 解析用キャンバスを作成
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        canvas.width = image.width;
-        canvas.height = image.height;
-        ctx.drawImage(image, 0, 0);
+        // 画像サイズを制限（パフォーマンス向上）
+        const maxSize = 800;
+        let { width, height } = this.calculateDisplaySize(image.width, image.height, maxSize);
+        
+        canvas.width = width;
+        canvas.height = height;
+        this.imageAnalyzer.canvas.width = width;
+        this.imageAnalyzer.canvas.height = height;
+        
+        ctx.drawImage(image, 0, 0, width, height);
         
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        console.log('画像データ取得完了:', imageData.data.length, 'ピクセル');
         
-        // 画像解析を実行
-        const colorAnalysis = this.imageAnalyzer.extractColors(imageData);
-        const textureAnalysis = this.imageAnalyzer.analyzeTexture(imageData);
-        const patternAnalysis = this.imageAnalyzer.analyzePattern(imageData);
-        
-        this.analysisData = {
-            colors: colorAnalysis,
-            texture: textureAnalysis,
-            pattern: patternAnalysis
-        };
-        
-        // 解析結果を表示
-        this.displayAnalysisResults();
+        try {
+            // 画像解析を実行
+            console.log('色分析開始...');
+            const colorAnalysis = this.imageAnalyzer.extractColors(imageData);
+            console.log('色分析完了:', colorAnalysis);
+            
+            console.log('テクスチャ分析開始...');
+            const textureAnalysis = this.imageAnalyzer.analyzeTexture(imageData);
+            console.log('テクスチャ分析完了:', textureAnalysis);
+            
+            console.log('パターン分析開始...');
+            const patternAnalysis = this.imageAnalyzer.analyzePattern(imageData);
+            console.log('パターン分析完了:', patternAnalysis);
+            
+            this.analysisData = {
+                colors: colorAnalysis,
+                texture: textureAnalysis,
+                pattern: patternAnalysis
+            };
+            
+            // 解析結果を表示
+            this.displayAnalysisResults();
+            console.log('画像解析完了');
+        } catch (error) {
+            console.error('画像解析エラー:', error);
+        }
     }
 
     displayAnalysisResults() {
@@ -275,10 +298,16 @@ class ImageToGlitchApp {
         
         canvas.width = width;
         canvas.height = height;
+        console.log('WebGLキャンバスサイズ設定:', width, 'x', height);
         
         try {
+            console.log('WebGLシェーダー初期化開始...');
             this.glitchShader = new GlitchShader(canvas);
+            console.log('WebGLシェーダー初期化完了');
+            
+            console.log('テクスチャ作成開始...');
             this.currentTexture = this.glitchShader.createTextureFromImage(this.currentImage);
+            console.log('テクスチャ作成完了');
         } catch (error) {
             console.error('WebGL setup failed:', error);
             // WebGLが使えない場合のフォールバック
@@ -289,10 +318,57 @@ class ImageToGlitchApp {
     setupCanvasFallback() {
         // WebGLが使えない場合のCanvas 2D実装
         console.log('Using Canvas 2D fallback');
-        // 簡単なフォールバック実装をここに追加
+        
+        const canvas = this.elements.glitchCanvas;
+        const ctx = canvas.getContext('2d');
+        
+        // 簡単なグリッジエフェクトをCanvas 2Dで実装
+        this.fallbackRender = () => {
+            if (!this.currentImage || !this.analysisData) return;
+            
+            const time = (Date.now() - this.startTime) / 1000;
+            const glitchIntensity = parseFloat(this.elements.glitchIntensity.value) / 100;
+            
+            // キャンバスをクリア
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 元画像を描画
+            ctx.drawImage(this.currentImage, 0, 0, canvas.width, canvas.height);
+            
+            // グリッジエフェクトを追加
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const x = (i / 4) % canvas.width;
+                const y = Math.floor((i / 4) / canvas.width);
+                
+                // 水平ストライプエフェクト
+                if (Math.sin(y * 0.1 + time) > 0.5) {
+                    data[i] = Math.min(255, data[i] * 1.2);     // R
+                    data[i + 1] = Math.min(255, data[i + 1] * 1.2); // G
+                    data[i + 2] = Math.min(255, data[i + 2] * 1.2); // B
+                }
+                
+                // RGB分離エフェクト
+                if (glitchIntensity > 0.3) {
+                    const offset = Math.sin(time + x * 0.01) * glitchIntensity * 5;
+                    if (offset > 0) {
+                        data[i] = Math.min(255, data[i] + offset * 10); // R
+                    }
+                }
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+        };
     }
 
     startGlitchGeneration() {
+        console.log('グリッジ生成開始');
+        console.log('glitchShader:', !!this.glitchShader);
+        console.log('currentTexture:', !!this.currentTexture);
+        console.log('analysisData:', !!this.analysisData);
+        
         const render = () => {
             if (this.glitchShader && this.currentTexture && this.analysisData) {
                 const time = (Date.now() - this.startTime) / 1000;
@@ -309,7 +385,25 @@ class ImageToGlitchApp {
                     roughness: this.analysisData.texture.roughness
                 };
                 
-                this.glitchShader.render(this.currentTexture, uniforms);
+                try {
+                    this.glitchShader.render(this.currentTexture, uniforms);
+                } catch (error) {
+                    console.error('レンダリングエラー:', error);
+                }
+            } else if (this.fallbackRender) {
+                // Canvas 2Dフォールバック
+                try {
+                    this.fallbackRender();
+                } catch (error) {
+                    console.error('フォールバックレンダリングエラー:', error);
+                }
+            } else {
+                console.log('レンダリング条件未満足:', {
+                    glitchShader: !!this.glitchShader,
+                    currentTexture: !!this.currentTexture,
+                    analysisData: !!this.analysisData,
+                    fallbackRender: !!this.fallbackRender
+                });
             }
             
             this.animationId = requestAnimationFrame(render);

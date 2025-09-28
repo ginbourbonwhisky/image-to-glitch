@@ -179,6 +179,36 @@ class GlitchShader {
                 return color;
             }
             
+            // ピクセル間引きエフェクト
+            vec3 pixelThinning(vec2 uv, vec3 color) {
+                // 間引きパターン
+                float thinFactor = mix(1.0, 8.0, u_glitchIntensity / 100.0);
+                vec2 thinUV = floor(uv * thinFactor) / thinFactor;
+                
+                // 間引きマスク
+                float mask = random(thinUV + u_time * 0.1);
+                
+                if (mask > 0.6) {
+                    // 色を単純化（量子化）
+                    vec3 quantized = floor(color * 4.0) / 4.0;
+                    
+                    // 主要色に置換
+                    float colorIndex = mod(mask * 6.0, 6.0);
+                    vec3 selectedColor = u_dominantColors[0];
+                    
+                    if (colorIndex < 1.0) selectedColor = u_dominantColors[0];
+                    else if (colorIndex < 2.0) selectedColor = u_dominantColors[1];
+                    else if (colorIndex < 3.0) selectedColor = u_dominantColors[2];
+                    else if (colorIndex < 4.0) selectedColor = u_dominantColors[3];
+                    else if (colorIndex < 5.0) selectedColor = u_dominantColors[4];
+                    else selectedColor = u_dominantColors[5];
+                    
+                    return mix(quantized, selectedColor, 0.3);
+                }
+                
+                return color;
+            }
+            
             // RGB分離
             vec3 rgbSplit(vec2 uv, float intensity) {
                 float offset = intensity * 0.01;
@@ -203,10 +233,13 @@ class GlitchShader {
                     color = signalDistortion(uv, color);
                 } else if (u_glitchType == 2) { // デジタル破綻
                     color = digitalGlitch(uv, color);
-                } else if (u_glitchType == 3) { // ミックス
+                } else if (u_glitchType == 3) { // ピクセル間引き
+                    color = pixelThinning(uv, color);
+                } else if (u_glitchType == 4) { // ミックス
                     color = dataCorruption(uv, color);
                     color = signalDistortion(uv, color);
                     color = digitalGlitch(uv, color);
+                    color = pixelThinning(uv, color);
                 }
                 
                 // パターンに基づく追加エフェクト

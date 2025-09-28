@@ -8,6 +8,7 @@ class ImageAnalyzer {
     extractColors(imageData, maxColors = 8) {
         const data = imageData.data;
         const colorMap = new Map();
+        const hsvData = [];
         
         // ピクセルサンプリング（パフォーマンス向上のため）
         const step = 4;
@@ -18,6 +19,10 @@ class ImageAnalyzer {
             const a = data[i + 3];
             
             if (a < 128) continue; // 透明度の低いピクセルをスキップ
+            
+            // HSV変換
+            const hsv = this.rgbToHsv(r, g, b);
+            hsvData.push(hsv);
             
             // 色を量子化して類似色をグループ化
             const quantizedR = Math.floor(r / 32) * 32;
@@ -46,7 +51,8 @@ class ImageAnalyzer {
             dominantColors: sortedColors,
             colorDistribution: this.analyzeColorDistribution(imageData),
             brightness: this.calculateBrightness(imageData),
-            contrast: this.calculateContrast(imageData)
+            contrast: this.calculateContrast(imageData),
+            hsvData: hsvData
         };
     }
 
@@ -80,6 +86,70 @@ class ImageAnalyzer {
             const hex = x.toString(16);
             return hex.length === 1 ? "0" + hex : hex;
         }).join("");
+    }
+
+    // RGB to HSV変換
+    rgbToHsv(r, g, b) {
+        r /= 255;
+        g /= 255;
+        b /= 255;
+
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const diff = max - min;
+
+        let h = 0;
+        if (diff !== 0) {
+            if (max === r) {
+                h = ((g - b) / diff) % 6;
+            } else if (max === g) {
+                h = (b - r) / diff + 2;
+            } else {
+                h = (r - g) / diff + 4;
+            }
+        }
+        h = (h * 60 + 360) % 360;
+
+        const s = max === 0 ? 0 : diff / max;
+        const v = max;
+
+        return {
+            h: Math.round(h),
+            s: Math.round(s * 100),
+            v: Math.round(v * 100)
+        };
+    }
+
+    // HSV to RGB変換
+    hsvToRgb(h, s, v) {
+        h = h / 360;
+        s = s / 100;
+        v = v / 100;
+
+        const c = v * s;
+        const x = c * (1 - Math.abs(((h * 6) % 2) - 1));
+        const m = v - c;
+
+        let r, g, b;
+        if (h < 1/6) {
+            r = c; g = x; b = 0;
+        } else if (h < 2/6) {
+            r = x; g = c; b = 0;
+        } else if (h < 3/6) {
+            r = 0; g = c; b = x;
+        } else if (h < 4/6) {
+            r = 0; g = x; b = c;
+        } else if (h < 5/6) {
+            r = x; g = 0; b = c;
+        } else {
+            r = c; g = 0; b = x;
+        }
+
+        return {
+            r: Math.round((r + m) * 255),
+            g: Math.round((g + m) * 255),
+            b: Math.round((b + m) * 255)
+        };
     }
 
     // 色分布分析

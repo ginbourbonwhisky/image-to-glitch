@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to Glitch - 写真からグリッジアートを生成</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Image to Glitch</h1>
+            <p>写真から色データ、テクスチャとパターンを抽出してグリッジアートを生成</p>
+        </header>
+
+        <main>
+            <!-- ファイルアップロード -->
+            <section class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7,10 12,15 17,10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <h3>写真をドラッグ&ドロップ</h3>
+                        <p>または<span class="upload-btn">ファイルを選択</span></p>
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 画像プレビューとコントロール -->
+            <section class="workspace" id="workspace" style="display: none;">
+                <div class="image-container">
+                    <div class="original-image">
+                        <h3>元画像</h3>
+                        <canvas id="originalCanvas"></canvas>
+                    </div>
+                    <div class="glitch-output">
+                        <h3>グリッジ出力</h3>
+                        <canvas id="glitchCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- コントロールパネル -->
+                <div class="controls">
+                    <h3>グリッジ設定</h3>
+                    
+                    <div class="control-group">
+                        <label for="glitchIntensity">グリッジ強度</label>
+                        <input type="range" id="glitchIntensity" min="0" max="100" value="50">
+                        <span id="glitchIntensityValue">50</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="colorWeight">色の重み</label>
+                        <input type="range" id="colorWeight" min="0" max="100" value="60">
+                        <span id="colorWeightValue">60</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="textureWeight">テクスチャの重み</label>
+                        <input type="range" id="textureWeight" min="0" max="100" value="40">
+                        <span id="textureWeightValue">40</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="patternWeight">パターンの重み</label>
+                        <input type="range" id="patternWeight" min="0" max="100" value="30">
+                        <span id="patternWeightValue">30</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="glitchType">グリッジタイプ</label>
+                        <select id="glitchType">
+                            <option value="0">水平ストライプ</option>
+                            <option value="1">カラーブロック</option>
+                            <option value="2">ノイズ</option>
+                            <option value="3">ミックス</option>
+                        </select>
+                    </div>
+
+                    <div class="control-buttons">
+                        <button id="regenerateBtn">再生成</button>
+                        <button id="exportBtn">エクスポート</button>
+                        <button id="resetBtn">リセット</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 分析結果表示 -->
+            <section class="analysis" id="analysis" style="display: none;">
+                <h3>画像分析結果</h3>
+                <div class="analysis-grid">
+                    <div class="color-analysis">
+                        <h4>色分析</h4>
+                        <div id="colorPalette"></div>
+                        <div id="colorData"></div>
+                    </div>
+                    <div class="texture-analysis">
+                        <h4>テクスチャ分析</h4>
+                        <div id="textureData"></div>
+                    </div>
+                    <div class="pattern-analysis">
+                        <h4>パターン分析</h4>
+                        <div id="patternData"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="image-analyzer.js"></script>
+    <script src="glitch-shader.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

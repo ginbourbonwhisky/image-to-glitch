@@ -6,7 +6,7 @@
 
 body {
     font-family: 'Arial', sans-serif;
-    background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%);
+    background: #000000;
     color: #ffffff;
     min-height: 100vh;
 }
@@ -99,11 +99,11 @@ header p {
 
 /* ワークスペース */
 .workspace {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    background: #000000;
     border: 2px solid #ff0080;
     border-radius: 20px;
     padding: 30px;
-    box-shadow: 0 20px 40px rgba(255, 0, 128, 0.2), inset 0 0 20px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 20px 40px rgba(255, 0, 128, 0.2);
     margin-bottom: 30px;
 }
 
@@ -265,11 +265,11 @@ canvas {
 
 /* 分析セクション */
 .analysis {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    background: #000000;
     border: 2px solid #00ff80;
     border-radius: 20px;
     padding: 30px;
-    box-shadow: 0 20px 40px rgba(0, 255, 128, 0.2), inset 0 0 20px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 20px 40px rgba(0, 255, 128, 0.2);
 }
 
 .analysis h3 {
@@ -287,7 +287,7 @@ canvas {
 
 .color-analysis, .texture-analysis, .pattern-analysis {
     padding: 20px;
-    background: rgba(0, 0, 0, 0.3);
+    background: #000000;
     border: 1px solid #8000ff;
     border-radius: 15px;
     box-shadow: 0 0 15px rgba(128, 0, 255, 0.3);

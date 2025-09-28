@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image to Glitch - 写真からグリッジアートを生成</title>
-    <link rel="stylesheet" href="style.css?v=2">
+    <title>Glitch Factory - Turn Pics Into Digital Chaos</title>
+    <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Image to Glitch</h1>
-            <p>写真から色データ、テクスチャとパターンを抽出してグリッジアートを生成</p>
+            <h1>GLITCH FACTORY</h1>
+            <p>Drop your pics, watch 'em get wrecked. Pure digital chaos.</p>
         </header>
 
         <main>
@@ -23,8 +23,8 @@
                             <polyline points="7,10 12,15 17,10"></polyline>
                             <line x1="12" y1="15" x2="12" y2="3"></line>
                         </svg>
-                        <h3>写真をドラッグ&ドロップ</h3>
-                        <p>または<span class="upload-btn">ファイルを選択</span></p>
+                        <h3>DROP YOUR SHIT HERE</h3>
+                        <p>or <span class="upload-btn">browse files</span></p>
                         <input type="file" id="fileInput" accept="image/*" hidden>
                     </div>
                 </div>
@@ -34,77 +34,77 @@
             <section class="workspace" id="workspace" style="display: none;">
                 <div class="image-container">
                     <div class="original-image">
-                        <h3>元画像</h3>
+                        <h3>ORIGINAL</h3>
                         <canvas id="originalCanvas"></canvas>
                     </div>
                     <div class="glitch-output">
-                        <h3>グリッジ出力</h3>
+                        <h3>GLITCHED</h3>
                         <canvas id="glitchCanvas"></canvas>
                     </div>
                 </div>
 
                 <!-- コントロールパネル -->
                 <div class="controls">
-                    <h3>グリッジ設定</h3>
+                    <h3>CHAOS CONTROLS</h3>
                     
                     <div class="control-group">
-                        <label for="glitchIntensity">グリッジ強度</label>
+                        <label for="glitchIntensity">DESTRUCTION LEVEL</label>
                         <input type="range" id="glitchIntensity" min="0" max="100" value="50">
                         <span id="glitchIntensityValue">50</span>
                     </div>
 
                     <div class="control-group">
-                        <label for="colorWeight">色の重み</label>
+                        <label for="colorWeight">COLOR POWER</label>
                         <input type="range" id="colorWeight" min="0" max="100" value="60">
                         <span id="colorWeightValue">60</span>
                     </div>
 
                     <div class="control-group">
-                        <label for="textureWeight">テクスチャの重み</label>
+                        <label for="textureWeight">TEXTURE MADNESS</label>
                         <input type="range" id="textureWeight" min="0" max="100" value="40">
                         <span id="textureWeightValue">40</span>
                     </div>
 
                     <div class="control-group">
-                        <label for="patternWeight">パターンの重み</label>
+                        <label for="patternWeight">PATTERN CHAOS</label>
                         <input type="range" id="patternWeight" min="0" max="100" value="30">
                         <span id="patternWeightValue">30</span>
                     </div>
 
                     <div class="control-group">
-                        <label for="glitchType">グリッジタイプ</label>
+                        <label for="glitchType">GLITCH TYPE</label>
                         <select id="glitchType">
-                            <option value="0">データ破損</option>
-                            <option value="1">信号乱れ</option>
-                            <option value="2">デジタル破綻</option>
-                            <option value="3">ピクセル間引き</option>
-                            <option value="4">ミックス</option>
+                            <option value="0">DATA CORRUPTION</option>
+                            <option value="1">SIGNAL DISTORTION</option>
+                            <option value="2">DIGITAL BREAKDOWN</option>
+                            <option value="3">PIXEL THINNING</option>
+                            <option value="4">FULL CHAOS</option>
                         </select>
                     </div>
 
                     <div class="control-buttons">
-                        <button id="regenerateBtn">再生成</button>
-                        <button id="exportBtn">エクスポート</button>
-                        <button id="resetBtn">リセット</button>
+                        <button id="regenerateBtn">REWRECK</button>
+                        <button id="exportBtn">SAVE CHAOS</button>
+                        <button id="resetBtn">RESET</button>
                     </div>
                 </div>
             </section>
 
             <!-- 分析結果表示 -->
             <section class="analysis" id="analysis" style="display: none;">
-                <h3>画像分析結果</h3>
+                <h3>DIGITAL FORENSICS</h3>
                 <div class="analysis-grid">
                     <div class="color-analysis">
-                        <h4>色分析</h4>
+                        <h4>COLOR SCAN</h4>
                         <div id="colorPalette"></div>
                         <div id="colorData"></div>
                     </div>
                     <div class="texture-analysis">
-                        <h4>テクスチャ分析</h4>
+                        <h4>TEXTURE ANALYSIS</h4>
                         <div id="textureData"></div>
                     </div>
                     <div class="pattern-analysis">
-                        <h4>パターン分析</h4>
+                        <h4>PATTERN BREAKDOWN</h4>
                         <div id="patternData"></div>
                     </div>
                 </div>

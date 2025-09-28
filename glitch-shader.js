@@ -67,15 +67,19 @@ class GlitchShader {
                 return mix(color, dominantColor, intensity * 0.3);
             }
             
-            // 水平ストライプエフェクト
-            vec3 horizontalStripes(vec2 uv, vec3 color) {
-                float stripeFreq = mix(20.0, 200.0, u_edgeDensity / 100.0);
-                float stripe = sin(uv.y * stripeFreq + u_time * 2.0);
+            // データ破損エフェクト
+            vec3 dataCorruption(vec2 uv, vec3 color) {
+                // ブロック化（モザイク）
+                float blockSize = mix(0.01, 0.1, u_glitchIntensity / 100.0);
+                vec2 blockUV = floor(uv / blockSize) * blockSize;
                 
-                // カラーブロック化
-                if (stripe > 0.5) {
-                    float colorIndex = mod(floor(uv.y * stripeFreq), 8.0);
-                    vec3 selectedColor = u_dominantColors[0]; // デフォルト
+                // ブロックごとにランダムな破綻
+                float corruption = random(blockUV + u_time * 0.1);
+                
+                if (corruption > 0.7) {
+                    // 完全なデータ破損 - 単色ブロック
+                    float colorIndex = mod(corruption * 8.0, 8.0);
+                    vec3 selectedColor = u_dominantColors[0];
                     
                     if (colorIndex < 1.0) selectedColor = u_dominantColors[0];
                     else if (colorIndex < 2.0) selectedColor = u_dominantColors[1];
@@ -86,40 +90,93 @@ class GlitchShader {
                     else if (colorIndex < 7.0) selectedColor = u_dominantColors[6];
                     else selectedColor = u_dominantColors[7];
                     
-                    return colorShift(color, selectedColor, u_colorWeight / 100.0);
+                    return selectedColor;
+                } else if (corruption > 0.4) {
+                    // 部分的な破綻 - 色の置換
+                    float colorIndex = mod(corruption * 4.0, 4.0);
+                    vec3 selectedColor = u_dominantColors[0];
+                    
+                    if (colorIndex < 1.0) selectedColor = u_dominantColors[0];
+                    else if (colorIndex < 2.0) selectedColor = u_dominantColors[1];
+                    else if (colorIndex < 3.0) selectedColor = u_dominantColors[2];
+                    else selectedColor = u_dominantColors[3];
+                    
+                    return mix(color, selectedColor, 0.6);
                 }
                 
                 return color;
             }
             
-            // カラーブロックエフェクト
-            vec3 colorBlocks(vec2 uv, vec3 color) {
-                vec2 blockSize = vec2(0.1, 0.05) * (1.0 + u_roughness / 100.0);
-                vec2 blockUV = floor(uv / blockSize) * blockSize;
+            // 信号乱れエフェクト
+            vec3 signalDistortion(vec2 uv, vec3 color) {
+                // 水平方向の信号乱れ
+                float distortion = sin(uv.y * 50.0 + u_time * 3.0) * 0.02;
+                vec2 distortedUV = uv + vec2(distortion, 0.0);
                 
-                float blockNoise = noise(blockUV * 10.0 + u_time);
-                float colorIndex = mod(blockNoise * 8.0, 8.0);
+                // 縦方向のずれ
+                float verticalShift = sin(uv.x * 30.0 + u_time * 2.0) * 0.01;
+                distortedUV.y += verticalShift;
                 
-                vec3 selectedColor = u_dominantColors[0]; // デフォルト
+                // 元の色を取得
+                vec3 originalColor = texture2D(u_texture, distortedUV).rgb;
                 
-                if (colorIndex < 1.0) selectedColor = u_dominantColors[0];
-                else if (colorIndex < 2.0) selectedColor = u_dominantColors[1];
-                else if (colorIndex < 3.0) selectedColor = u_dominantColors[2];
-                else if (colorIndex < 4.0) selectedColor = u_dominantColors[3];
-                else if (colorIndex < 5.0) selectedColor = u_dominantColors[4];
-                else if (colorIndex < 6.0) selectedColor = u_dominantColors[5];
-                else if (colorIndex < 7.0) selectedColor = u_dominantColors[6];
-                else selectedColor = u_dominantColors[7];
+                // ランダムな色の挿入
+                float noiseValue = noise(uv * 20.0 + u_time);
+                if (noiseValue > 0.8) {
+                    float colorIndex = mod(noiseValue * 6.0, 6.0);
+                    vec3 selectedColor = u_dominantColors[0];
+                    
+                    if (colorIndex < 1.0) selectedColor = u_dominantColors[0];
+                    else if (colorIndex < 2.0) selectedColor = u_dominantColors[1];
+                    else if (colorIndex < 3.0) selectedColor = u_dominantColors[2];
+                    else if (colorIndex < 4.0) selectedColor = u_dominantColors[3];
+                    else if (colorIndex < 5.0) selectedColor = u_dominantColors[4];
+                    else selectedColor = u_dominantColors[5];
+                    
+                    return mix(originalColor, selectedColor, 0.7);
+                }
                 
-                return mix(color, selectedColor, u_colorWeight / 200.0);
+                return originalColor;
             }
             
-            // ノイズエフェクト
-            vec3 digitalNoise(vec2 uv, vec3 color) {
-                float noiseValue = noise(uv * 100.0 + u_time * 5.0);
-                vec3 noiseColor = vec3(noiseValue);
+            // デジタル破綻エフェクト
+            vec3 digitalGlitch(vec2 uv, vec3 color) {
+                // ピクセル化
+                float pixelSize = mix(0.001, 0.02, u_glitchIntensity / 100.0);
+                vec2 pixelUV = floor(uv / pixelSize) * pixelSize;
                 
-                return mix(color, noiseColor, u_textureWeight / 500.0);
+                // ランダムな破綻
+                float glitch = random(pixelUV + u_time * 0.05);
+                
+                if (glitch > 0.9) {
+                    // 完全な破綻 - 単色ブロック
+                    float colorIndex = mod(glitch * 8.0, 8.0);
+                    vec3 selectedColor = u_dominantColors[0];
+                    
+                    if (colorIndex < 1.0) selectedColor = u_dominantColors[0];
+                    else if (colorIndex < 2.0) selectedColor = u_dominantColors[1];
+                    else if (colorIndex < 3.0) selectedColor = u_dominantColors[2];
+                    else if (colorIndex < 4.0) selectedColor = u_dominantColors[3];
+                    else if (colorIndex < 5.0) selectedColor = u_dominantColors[4];
+                    else if (colorIndex < 6.0) selectedColor = u_dominantColors[5];
+                    else if (colorIndex < 7.0) selectedColor = u_dominantColors[6];
+                    else selectedColor = u_dominantColors[7];
+                    
+                    return selectedColor;
+                } else if (glitch > 0.7) {
+                    // 部分的な破綻 - 色の置換
+                    float colorIndex = mod(glitch * 4.0, 4.0);
+                    vec3 selectedColor = u_dominantColors[0];
+                    
+                    if (colorIndex < 1.0) selectedColor = u_dominantColors[0];
+                    else if (colorIndex < 2.0) selectedColor = u_dominantColors[1];
+                    else if (colorIndex < 3.0) selectedColor = u_dominantColors[2];
+                    else selectedColor = u_dominantColors[3];
+                    
+                    return mix(color, selectedColor, 0.5);
+                }
+                
+                return color;
             }
             
             // RGB分離
@@ -140,16 +197,16 @@ class GlitchShader {
                 vec3 color = rgbSplit(uv, u_glitchIntensity / 100.0);
                 
                 // グリッジタイプによる処理分岐
-                if (u_glitchType == 0) { // 水平ストライプ
-                    color = horizontalStripes(uv, color);
-                } else if (u_glitchType == 1) { // カラーブロック
-                    color = colorBlocks(uv, color);
-                } else if (u_glitchType == 2) { // ノイズ
-                    color = digitalNoise(uv, color);
+                if (u_glitchType == 0) { // データ破損
+                    color = dataCorruption(uv, color);
+                } else if (u_glitchType == 1) { // 信号乱れ
+                    color = signalDistortion(uv, color);
+                } else if (u_glitchType == 2) { // デジタル破綻
+                    color = digitalGlitch(uv, color);
                 } else if (u_glitchType == 3) { // ミックス
-                    color = horizontalStripes(uv, color);
-                    color = colorBlocks(uv, color);
-                    color = digitalNoise(uv, color);
+                    color = dataCorruption(uv, color);
+                    color = signalDistortion(uv, color);
+                    color = digitalGlitch(uv, color);
                 }
                 
                 // パターンに基づく追加エフェクト

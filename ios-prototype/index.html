@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Glitch Slice Camera</title>
+<style>
+html,body{margin:0;padding:0;background:#000;overscroll-behavior:none}
+#p5-holder{position:fixed;inset:0}
+canvas{display:block}
+.hint{position:fixed;left:8px;bottom:8px;color:#fff;font:12px/1.4 -apple-system,system-ui}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.2/p5.min.js"></script>
+</head>
+<body>
+<div id="p5-holder"></div>
+<div class="hint">Tap to (un)freeze • Double‑tap to reshuffle • Shoot button to save</div>
+<script>
+let video, img;
+let frozen = false;
+let needReseed = true;
+
+const numOverlays = 120;
+const numBigSlices = 3;
+const minVXSpan = 0.6,  maxVXSpan = 5.0;
+const minVYSpan = 0.6,  maxVYSpan = 4.0;
+const spanPowerX = 2.5, spanPowerY = 2.0;
+const bigVXSpan  = 20 / 3;
+const bigVYSpan  = 20 / 3;
+const biasRightOnly = true;
+let slices = [];
+
+function seedSlices(){
+  slices = [];
+  for(let i=0;i<numOverlays;i++) slices.push(makeSlice(false));
+  for(let i=0;i<numBigSlices;i++) slices.push(makeSlice(true));
+}
+function makeSlice(isBig){
+  const spanX = isBig ? bigVXSpan : randomBiased(minVXSpan, maxVXSpan, spanPowerX);
+  const spanY = isBig ? bigVYSpan : randomBiased(minVYSpan, maxVYSpan, spanPowerY);
+  const vXStart = random(-10, 10 - spanX);
+  const vXEnd   = biasRightOnly ? (vXStart + spanX) : (vXStart + (random()<0.5?-spanX:spanX));
+  const vYStart = random(-10, 10 - spanY);
+  const vYEnd   = vYStart + spanY;
+  return { vXStart, vXEnd, vYStart, vYEnd };
+}
+
+function setup(){
+  const holder = document.getElementById('p5-holder');
+  const cnv = createCanvas(window.innerWidth, window.innerHeight); cnv.parent(holder);
+  pixelDensity(1);
+
+  const constraints = { audio:false, video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} } };
+  video = createCapture(constraints);
+  video.elt.setAttribute('playsinline','');
+  video.elt.setAttribute('autoplay','');
+  video.elt.muted = true;
+  video.size(width,height);
+  video.hide();
+
+  seedSlices();
+  img = createImage(width,height);
+
+  // SHOOT button
+  const btn = document.createElement('button');
+  btn.textContent = 'SHOOT';
+  Object.assign(btn.style,{position:'fixed',right:'16px',bottom:'16px',padding:'14px 18px',background:'#00ff80',color:'#000',border:'0',borderRadius:'12px',fontWeight:'800',letterSpacing:'1px'});
+  btn.onclick = ()=>captureFrame();
+  document.body.appendChild(btn);
+
+  let lastTap=0;
+  window.addEventListener('touchend',()=>{
+    const now=Date.now();
+    if(now-lastTap<300){ needReseed=true; }
+    else{ frozen=!frozen; }
+    lastTap=now;
+  });
+}
+
+function windowResized(){
+  resizeCanvas(window.innerWidth, window.innerHeight);
+  video.size(width,height);
+  img = createImage(width,height);
+  needReseed = true;
+}
+
+function draw(){
+  if(needReseed){ seedSlices(); needReseed=false; }
+  if(!frozen){ img.copy(video,0,0,video.width,video.height,0,0,width,height); img.loadPixels(); }
+  background(0);
+  const xImgBase = mapVirtualToImageX(-10, img.width);
+  for(let y=0;y<height;y++){
+    const yImg = mapCanvasToImageY(y, img.height, height);
+    const c = getColorFast(img, xImgBase, yImg);
+    stroke(c); line(0,y,width,y);
+  }
+  noStroke();
+  for(let k=0;k<slices.length;k++) drawSlice(img, slices[k]);
+}
+
+function drawSlice(im,s){
+  const xImgSample = mapVirtualToImageX(s.vXStart, im.width);
+  const xCanvasStart = mapVirtualToCanvasX(s.vXStart, width);
+  const xCanvasEnd = mapVirtualToCanvasX(s.vXEnd, width);
+  const yCanvasA = mapVirtualToCanvasY(s.vYStart, height);
+  const yCanvasB = mapVirtualToCanvasY(s.vYEnd, height);
+  const xDrawMin = floor(min(xCanvasStart, xCanvasEnd));
+  const xDrawMax = ceil(max(xCanvasStart, xCanvasEnd));
+  const yDrawMin = floor(min(yCanvasA, yCanvasB));
+  const yDrawMax = ceil(max(yCanvasA, yCanvasB));
+  for(let y=yDrawMin;y<yDrawMax;y++){
+    const yImg = mapCanvasToImageY(y, im.height, height);
+    const c = getColorFast(im, xImgSample, yImg);
+    fill(c); rect(xDrawMin, y, xDrawMax-xDrawMin, 1);
+  }
+}
+
+function getColorFast(im,x,y){
+  x=constrain(x,0,im.width-1); y=constrain(y,0,im.height-1);
+  const idx=4*(y*im.width+x), px=im.pixels; return color(px[idx],px[idx+1],px[idx+2],px[idx+3]);
+}
+function randomBiased(min,max,power=2){ return min + Math.pow(Math.random(),power)*(max-min); }
+function mapVirtualToImageX(vx,imgW){ return int(constrain(map(vx,-10,10,0,imgW-1),0,imgW-1)); }
+function mapVirtualToCanvasX(vx,W){ return map(vx,-10,10,0,W); }
+function mapVirtualToCanvasY(vy,H){ return map(vy,-10,10,H,0); }
+function mapCanvasToImageY(yCanvas,imgH,H){ return int(constrain(map(yCanvas,0,H,0,imgH-1),0,imgH-1)); }
+
+function captureFrame(){
+  const dataURL = canvas.toDataURL('image/png');
+  if(window.webkit?.messageHandlers?.save){
+    window.webkit.messageHandlers.save.postMessage(dataURL);
+  } else {
+    const a=document.createElement('a'); a.href=dataURL; a.download='glitch.png'; a.click();
+  }
+}
+</script>
+</body>
+</html>
